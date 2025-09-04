@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Electricity & Magnetism Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-2: #10b981;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #e8eefc, #f6f9ff);
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    header { padding: 24px 16px 8px; text-align: center; }
+    header h1 { margin: 0 0 6px; font-size: 28px; }
+    header p { margin: 0; color: var(--muted); }
+    .toolbar {
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+      margin: 14px 0 10px;
+    }
+    .toolbar button {
+      padding: 10px 14px;
+      background: var(--card);
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,.06);
+    }
+    .toolbar button.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      box-shadow: 0 6px 16px rgba(37,99,235,.35);
+    }
+    .panel {
+      width: min(960px, 94vw);
+      background: var(--card);
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.08);
+    }
+    .canvas-wrap {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%; height: auto;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      display: block;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .control {
+      background: #fbfbfd;
+      border: 1px solid #eef0f5;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .control label { display: block; font-size: 14px; margin-bottom: 6px; color: var(--muted); }
+    .control input[type="range"] { width: 100%; }
+    .row { display:flex; align-items:center; gap:10px; }
+    .tag {
+      display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px;
+      background:#eef2ff; color:#3730a3; border:1px solid #e2e8f0;
+    }
+    .hint { color: var(--muted); font-size: 13px; margin: 10px 2px 0; }
+    .kbd {
+      display:inline-block; border:1px solid #d1d5db; background:#fff; border-bottom-width:2px;
+      border-radius:6px; padding:2px 6px; font-size:12px; font-weight:600;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚡ Electricity & Magnetism Lab</h1>
+    <p>Build circuits, trace magnetic fields, and see induction in action.</p>
+  </header>
+
+  <div class="toolbar">
+    <button id="tab-circuit" class="active" onclick="setMode('circuit')">Circuit Building</button>
+    <button id="tab-field" onclick="setMode('field')">Magnetic Field Lines</button>
+    <button id="tab-induction" onclick="setMode('induction')">Induction Loop</button>
+  </div>
+
+  <section class="panel">
+    <div class="canvas-wrap">
+      <canvas id="canvas" width="960" height="520"></canvas>
+    </div>
+
+    <!-- Circuit controls -->
+    <div id="controls-circuit" class="controls">
+      <div class="control">
+        <label>Battery Voltage: <strong id="vVal">6.0 V</strong></label>
+        <input type="range" min="0" max="12" step="0.1" value="6" id="vSlider">
+      </div>
+      <div class="control">
+        <label>Total Resistance: <strong id="rVal">20 Ω</strong></label>
+        <input type="range" min="1" max="200" step="1" value="20" id="rSlider">
+      </div>
+      <div class="control">
+        <label>Switch</label>
+        <div class="row">
+          <button id="switchBtn" onclick="toggleSwitch()">Close Circuit</button>
+          <span class="tag" id="iTag">I = 0.000 A</span>
+        </div>
+      </div>
+      <p class="hint">Tip: Current <em>I = V / R</em>. Bulb brightness scales with current. Arrows show direction of conventional current.</p>
+    </div>
+
+    <!-- Field controls -->
+    <div id="controls-field" class="controls" style="display:none">
+      <div class="control">
+        <label>Magnet Strength: <strong id="mVal">1.0</strong></label>
+        <input type="range" min="0.2" max="2.0" step="0.1" value="1.0" id="mSlider">
+      </div>
+      <div class="control">
+        <label>Flip Polarity</label>
+        <div class="row">
+          <button id="flipBtn" onclick="flipPolarity()">Flip</button>
+          <span class="tag">N → S arrows</span>
+        </div>
+      </div>
+      <div class="control">
+        <label>Vector Density</label>
+        <input type="range" min="20" max="70" step="5" value="40" id="densSlider">
+      </div>
+      <p class="hint">The bar magnet is modeled with two opposite “poles” at each end. Arrows indicate field direction; length hints magnitude.</p>
+    </div>
+
+    <!-- Induction controls -->
+    <div id="controls-induction" class="controls" style="display:none">
+      <div class="control">
+        <label>Magnet Speed: <strong id="spdVal">2.0 px/frame</strong></label>
+        <input type="range" min="0" max="6" step="0.1" value="2" id="spdSlider">
+      </div>
+      <div class="control">
+        <label>Magnet Strength: <strong id="indMagVal">1.0</strong></label>
+        <input type="range" min="0.3" max="2.0" step="0.1" value="1.0" id="indMagSlider">
+      </div>
+      <div class="control">
+        <label>Reverse Direction</label>
+        <button onclick="reverseMagnet()">Reverse</button>
+      </div>
+      <p class="hint">
+        Faraday’s Law: <em>EMF ≈ - dΦ/dt</em>. As the magnet moves through the coil, changing flux induces a voltage.
+        Watch the meter and coil color flip with EMF sign. Pause/resume with <span class="kbd">Space</span>.
+      </p>
+    </div>
+  </section>
+
+  <script>
+    // ---------- Shared ----------
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let mode = 'circuit';
+    let paused = false;
+
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll('.toolbar button').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + m).classList.add('active');
+      // toggle controls
+      document.getElementById('controls-circuit').style.display = m === 'circuit' ? '' : 'none';
+      document.getElementById('controls-field').style.display = m === 'field' ? '' : 'none';
+      document.getElementById('controls-induction').style.display = m === 'induction' ? '' : 'none';
+      // resets where needed
+      if (m === 'induction') resetInduction();
+      if (m === 'circuit')  tDash = 0;
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') paused = !paused;
+    });
+
+    // ---------- Circuit Building ----------
+    const vSlider = document.getElementById('vSlider');
+    const rSlider = document.getElementById('rSlider');
+    const vVal = document.getElementById('vVal');
+    const rVal = document.getElementById('rVal');
+    const iTag = document.getElementById('iTag');
+    const switchBtn = document.getElementById('switchBtn');
+
+    let circuit = {
+      V: parseFloat(vSlider.value),
+      R: parseFloat(rSlider.value),
+      closed: false
+    };
+
+    vSlider.oninput = () => { circuit.V = parseFloat(vSlider.value); vVal.textContent = `${(+circuit.V).toFixed(1)} V`; };
+    rSlider.oninput = () => { circuit.R = parseFloat(rSlider.value); rVal.textContent = `${(+circuit.R).toFixed(0)} Ω`; };
+    function toggleSwitch() {
+      circuit.closed = !circuit.closed;
+      switchBtn.textContent = circuit.closed ? 'Open Circuit' : 'Close Circuit';
+    }
+
+    function current() { return circuit.closed ? (circuit.V / circuit.R) : 0; }
+
+    let tDash = 0; // anim for current arrows
+
+    function drawBattery(x, y, scale=1) {
+      const h = 60*scale, w = 26*scale;
+      ctx.fillStyle = '#222';
+      ctx.fillRect(x, y-h/2, w, h);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(x+4, y-h/2+4, w-8, h-8);
+      // terminals
+      ctx.fillStyle = '#111';
+      ctx.fillRect(x-6, y-6, 6, 12);
+      ctx.fillRect(x+w, y-3, 6, 6);
+      // plus/minus
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(x+w+10, y-1, 10, 2);
+      ctx.fillRect(x+w+15, y-6, 2, 12);
+      ctx.fillRect(x-18, y-1, 10, 2);
+    }
+
+    function drawResistor(x, y, w, h) {
+      ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+      const zig = 9;
+      const step = w/zig;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      for (let i=1;i<=zig;i++) {
+        const yy = y + ((i%2===0)?-h:h);
+        ctx.lineTo(x + i*step, yy);
+      }
+      ctx.lineTo(x+w, y);
+      ctx.stroke();
+    }
+
+    function drawBulb(x, y, I) {
+      // Bulb brightness proportional to current (clamped)
+      const brightness = Math.min(1, I*4);
+      const glow = 40*brightness;
+      // glow
+      const g = ctx.createRadialGradient(x, y, 4, x, y, 40+glow);
+      g.addColorStop(0, `rgba(255,215,0, ${0.55*brightness})`);
+      g.addColorStop(1, 'rgba(255,215,0, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, 42+glow, 0, Math.PI*2); ctx.fill();
+      // bulb
+      ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,225,120, ${0.35 + 0.65*brightness})`;
+      ctx.fill(); ctx.strokeStyle='#444'; ctx.stroke();
+      // base
+      ctx.fillStyle = '#888';
+      ctx.fillRect(x-10, y+18, 20, 10);
+    }
+
+    function drawWirePath(path, I) {
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (let i=1;i<path.length;i++) ctx.lineTo(path[i].x, path[i].y);
+      ctx.stroke();
+
+      // Current direction arrows (conventional: + from battery long side)
+      if (I <= 0) return;
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#2563eb';
+      const dash = 28, gap = 18;
+      // draw moving chevrons along each segment
+      let acc = tDash % (dash+gap);
+      for (let i=0;i<path.length-1;i++){
+        const a = path[i], b = path[i+1];
+        const segLen = Math.hypot(b.x-a.x, b.y-a.y);
+        const nx = (b.x-a.x)/segLen, ny = (b.y-a.y)/segLen;
+        for (let d = -acc; d <= segLen; d += dash+gap) {
+          const cx = a.x + nx*(d+dash/2), cy = a.y + ny*(d+dash/2);
+          if (d>=-dash && d<=segLen) {
+            // chevron
+            ctx.beginPath();
+            const size = 6 + Math.min(10, I*30);
+            ctx.moveTo(cx - ny*size*0.8, cy + nx*size*0.8);
+            ctx.lineTo(cx, cy);
+            ctx.lineTo(cx + ny*size*0.8, cy - nx*size*0.8);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function renderCircuit() {
+      const I = current();
+      iTag.textContent = `I = ${I.toFixed(3)} A`;
+
+      // Layout
+      const cx = canvas.width/2, cy = canvas.height/2 + 40;
+      const left = cx-300, right = cx+300, top = cy-160, bottom = cy+120;
+
+      // Wires rectangle path (battery left, resistor top, bulb right, switch bottom)
+      const wirePath = [
+        {x:left+30, y:cy}, {x:left+120, y:cy}, // from battery +
+        {x:left+120, y:top}, {x:right-120, y:top}, // to resistor
+        {x:right-120, y:cy}, {x:right-30, y:cy}, // to bulb
+        {x:right-30, y:bottom}, {x:left+30, y:bottom}, // down to switch
+        {x:left+30, y:cy} // back to battery -
+      ];
+
+      // Background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // Components
+      drawBattery(left+30, cy, 1.2);
+      // Resistor (top center)
+      drawResistor(cx-80, top, 160, 10);
+      // Bulb (right center)
+      drawBulb(right-30, cy, I);
+
+      // Switch bottom-left
+      ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
+      // stationary terminals
+      ctx.beginPath();
+      ctx.moveTo(left+60, bottom);
+      ctx.lineTo(left+120, bottom);
+      ctx.stroke();
+      // lever
+      ctx.beginPath();
+      if (circuit.closed) {
+        ctx.moveTo(left+60, bottom);
+        ctx.lineTo(left+120, bottom);
+      } else {
+        ctx.moveTo(left+60, bottom);
+        ctx.lineTo(left+105, bottom-24);
+      }
+      ctx.stroke();
+
+      // Wires + current arrows
+      drawWirePath(wirePath, I);
+
+      // Labels
+      ctx.fillStyle = '#111'; ctx.font = '14px system-ui';
+      ctx.fillText(`V = ${circuit.V.toFixed(1)} V`, left+10, cy-40);
+      ctx.fillText(`R = ${circuit.R.toFixed(0)} Ω`, cx-20, top-10);
+      ctx.fillStyle = circuit.closed ? '#10b981' : '#ef4444';
+      ctx.fillText(circuit.closed ? 'Switch: CLOSED' : 'Switch: OPEN', left+10, bottom+22);
+
+      tDash += Math.max(0.4, Math.min(2.5, I*4.5));
+    }
+
+    // ---------- Magnetic Field Lines ----------
+    const mSlider = document.getElementById('mSlider');
+    const densSlider = document.getElementById('densSlider');
+    const mVal = document.getElementById('mVal');
+    let magnet = {
+      strength: parseFloat(mSlider.value),
+      flip: false
+    };
+    mSlider.oninput = () => { magnet.strength = parseFloat(mSlider.value); mVal.textContent = magnet.strength.toFixed(1); };
+    function flipPolarity(){ magnet.flip = !magnet.flip; }
+
+    function fieldVector(x, y) {
+      // Two-pole approximation (monopole model) for a horizontal bar magnet.
+      const cx = canvas.width/2, cy = canvas.height/2;
+      const half = 140; // half-length
+      const north = magnet.flip ? {x: cx+half, y: cy} : {x: cx-half, y: cy};
+      const south = magnet.flip ? {x: cx-half, y: cy} : {x: cx+half, y: cy};
+      // B ~ k*( rN/|rN|^3 - rS/|rS|^3 )
+      const k = magnet.strength * 9000;
+      const rxN = x-north.x, ryN = y-north.y;
+      const rxS = x-south.x, ryS = y-south.y;
+      const rN2 = rxN*rxN + ryN*ryN + 2000;
+      const rS2 = rxS*rxS + ryS*ryS + 2000;
+      const invN = 1/Math.pow(rN2, 1.5);
+      const invS = 1/Math.pow(rS2, 1.5);
+      return {
+        x: k*(rxN*invN - rxS*invS),
+        y: k*(ryN*invN - ryS*invS)
+      };
+    }
+
+    function renderField() {
+      // background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // draw vector field
+      const density = parseInt(densSlider.value, 10);
+      const step = density;
+      for (let y=60; y<canvas.height-60; y+=step) {
+        for (let x=60; x<canvas.width-60; x+=step) {
+          const v = fieldVector(x,y);
+          const mag = Math.hypot(v.x, v.y);
+          // scale to a nice arrow length
+          const maxLen = step*0.5;
+          const len = Math.min(maxLen, 0.004*mag);
+          const nx = v.x/(mag||1), ny = v.y/(mag||1);
+          const x2 = x + nx*len, y2 = y + ny*len;
+
+          ctx.strokeStyle = '#374151';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke();
+
+          // arrow head
+          const ah = 5;
+          ctx.beginPath();
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(x2 - ny*ah, y2 + nx*ah);
+          ctx.lineTo(x2 + ny*ah, y2 - nx*ah);
+          ctx.closePath();
+          ctx.fillStyle = '#4b5563';
+          ctx.fill();
+        }
+      }
+
+      // draw magnet
+      const cx = canvas.width/2, cy = canvas.height/2;
+      const w = 280, h = 60;
+      ctx.fillStyle = magnet.flip ? '#ef4444' : '#3b82f6';
+      ctx.fillRect(cx - w/2, cy - h/2, w/2, h);
+      ctx.fillStyle = magnet.flip ? '#3b82f6' : '#ef4444';
+      ctx.fillRect(cx, cy - h/2, w/2, h);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px system-ui';
+      ctx.fillText(magnet.flip ? 'S' : 'N', cx - w/4 - 6, cy + 6);
+      ctx.fillText(magnet.flip ? 'N' : 'S', cx + w/4 - 6, cy + 6);
+    }
+
+    // ---------- Induction Loop ----------
+    const spdSlider = document.getElementById('spdSlider');
+    const indMagSlider = document.getElementById('indMagSlider');
+    const spdVal = document.getElementById('spdVal');
+    const indMagVal = document.getElementById('indMagVal');
+
+    spdSlider.oninput = () => { vMag = parseFloat(spdSlider.value); spdVal.textContent = `${vMag.toFixed(1)} px/frame`; };
+    indMagSlider.oninput = () => { magStrength = parseFloat(indMagSlider.value); indMagVal.textContent = magStrength.toFixed(1); };
+
+    let coil = { x: 680, y: canvas.height/2, r: 70, turns: 10 };
+    let mag = { x: 240, y: canvas.height/2, r: 26 };
+    let vMag = parseFloat(spdSlider.value);
+    let magStrength = parseFloat(indMagSlider.value);
+    let emf = 0, prevPhi = 0;
+
+    function reverseMagnet(){ vMag = -vMag; spdVal.textContent = `${vMag.toFixed(1)} px/frame`; }
+    function resetInduction() { mag.x = 240; prevPhi = 0; emf = 0; }
+
+    function fluxApprox(magX) {
+      // Very rough flux model: Φ ~ k * strength / (distance^2 + a^2)
+      const dx = (coil.x - magX), dy = (coil.y - mag.y);
+      const dist2 = dx*dx + dy*dy;
+      const k = 20000; const a2 = 6000;
+      return magStrength * k / (dist2 + a2);
+    }
+
+    function renderInduction() {
+      // background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // Move magnet
+      mag.x += vMag;
+      if (mag.x < 140 || mag.x > canvas.width - 140) vMag = -vMag;
+
+      // Compute flux & EMF
+      const phi = fluxApprox(mag.x);
+      emf = -(phi - prevPhi);   // discrete derivative ~ -dΦ/dt
+      prevPhi = phi;
+
+      // Coil color by emf sign
+      const coilColor = emf > 0 ? '#10b981' : (emf < 0 ? '#ef4444' : '#6b7280');
+
+      // Draw coil
+      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = coilColor;
+      for (let i=0;i<coil.turns;i++){
+        const rr = coil.r - i*(coil.r/coil.turns)*0.8;
+        ctx.beginPath();
+        ctx.arc(coil.x, coil.y, rr, 0, Math.PI*2);
+        ctx.stroke();
+      }
+
+      // Draw magnet (north/south ends)
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(mag.x - 18, mag.y, mag.r, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#3b82f6';
+      ctx.beginPath(); ctx.arc(mag.x + 18, mag.y, mag.r, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui';
+      ctx.fillText('N', mag.x - 22, mag.y + 5);
+      ctx.fillText('S', mag.x + 14, mag.y + 5);
+
+      // Direction arrow on coil (Lenz’s law)
+      const sign = Math.sign(emf);
+      if (Math.abs(emf) > 0.0005) {
+        const dir = sign > 0 ? 1 : -1;
+        ctx.strokeStyle = coilColor; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(coil.x, coil.y, coil.r + 22, -Math.PI/3, Math.PI/3, dir<0);
+        ctx.stroke();
+        // arrow head
+        const theta = dir>0 ? Math.PI/3 : -Math.PI/3;
+        const ax = coil.x + (coil.r+22)*Math.cos(theta), ay = coil.y + (coil.r+22)*Math.sin(theta);
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(ax - 10, ay - 6*dir);
+        ctx.lineTo(ax - 10, ay + 6*dir);
+        ctx.closePath();
+        ctx.fillStyle = coilColor; ctx.fill();
+      }
+
+      // EMF meter
+      ctx.fillStyle = '#111'; ctx.font = '14px system-ui';
+      ctx.fillText('EMF (arb. units):', 24, 34);
+      const meterX = 24, meterY = 40, meterW = 220, meterH = 16;
+      ctx.strokeStyle = '#e5e7eb'; ctx.strokeRect(meterX, meterY, meterW, meterH);
+      const clamp = Math.max(-1, Math.min(1, emf*0.02));
+      const fillW = (meterW/2) * Math.abs(clamp);
+      ctx.fillStyle = clamp >= 0 ? '#10b981' : '#ef4444';
+      if (clamp >= 0) ctx.fillRect(meterX + meterW/2, meterY, fillW, meterH);
+      else ctx.fillRect(meterX + meterW/2 - fillW, meterY, fillW, meterH);
+      ctx.fillStyle = '#6b7280';
+      ctx.fillText(`${(emf*1000).toFixed(2)} m·(arb)`, meterX, meterY+36);
+
+      // Labels
+      ctx.fillStyle = '#6b7280';
+      ctx.fillText('Move magnet → changing flux → induced EMF', 24, meterY+56);
+    }
+
+    // ---------- Main Loop ----------
+    function loop() {
+      if (!paused) {
+        if (mode === 'circuit') renderCircuit();
+        else if (mode === 'field') renderField();
+        else if (mode === 'induction') renderInduction();
+      }
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
