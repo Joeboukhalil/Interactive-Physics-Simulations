@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🔆 Optics Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px;
+    }
+    header {
+      text-align:center;
+      margin-bottom:20px;
+    }
+    header h1 { font-size:2.2em; margin:0; }
+    header p { color:#555; margin:5px 0 0; }
+    .canvas-wrap {
+      border:1px solid #ccc;
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    canvas { display:block; }
+    .toolbar {
+      margin-top:12px;
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .toolbar button {
+      padding:8px 14px;
+      border-radius:10px;
+      border:1px solid #ccc;
+      background:#fff;
+      cursor:pointer;
+      font-weight:600;
+      transition:0.2s;
+    }
+    .toolbar button.active { background:#2563eb; color:white; border-color:#2563eb; }
+    .controls { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; justify-content:center; }
+    .control { display:flex; flex-direction:column; align-items:flex-start; background:#fafafa; border-radius:10px; padding:8px 12px; border:1px solid #ddd; }
+    .control label { font-size:14px; margin-bottom:4px; color:#555; }
+    .hint { font-size:13px; color:#777; text-align:center; margin-top:10px; }
+    input[type=range] { width:120px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔆 Optics Lab</h1>
+    <p>Light reflection/refraction, lens behavior, and color mixing</p>
+  </header>
+
+  <div class="toolbar">
+    <button id="tab-light" class="active" onclick="setMode('light')">Light Rays</button>
+    <button id="tab-lens" onclick="setMode('lens')">Lens</button>
+    <button id="tab-color" onclick="setMode('color')">Color Mixing</button>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="canvas" width="960" height="520"></canvas>
+  </div>
+
+  <div id="controls-light" class="controls">
+    <div class="control">
+      <label>Angle of Incidence: <span id="angleVal">30°</span></label>
+      <input type="range" min="0" max="80" value="30" id="angleSlider">
+    </div>
+  </div>
+
+  <div id="controls-lens" class="controls" style="display:none">
+    <div class="control">
+      <label>Lens Type</label>
+      <select id="lensType">
+        <option value="convex">Convex</option>
+        <option value="concave">Concave</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>Focal Length: <span id="focalVal">150</span> px</label>
+      <input type="range" min="50" max="300" value="150" id="focalSlider">
+    </div>
+  </div>
+
+  <div id="controls-color" class="controls" style="display:none">
+    <div class="control">
+      <label>Red Intensity</label>
+      <input type="range" min="0" max="255" value="255" id="redSlider">
+    </div>
+    <div class="control">
+      <label>Green Intensity</label>
+      <input type="range" min="0" max="255" value="0" id="greenSlider">
+    </div>
+    <div class="control">
+      <label>Blue Intensity</label>
+      <input type="range" min="0" max="255" value="0" id="blueSlider">
+    </div>
+  </div>
+
+  <p class="hint">Tip: Experiment with angles, lenses, and RGB beams. See how light behaves visually!</p>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let mode = 'light';
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll('.toolbar button').forEach(b=>b.classList.remove('active'));
+      document.getElementById('tab-'+m).classList.add('active');
+      document.getElementById('controls-light').style.display = (m==='light')?'flex':'none';
+      document.getElementById('controls-lens').style.display = (m==='lens')?'flex':'none';
+      document.getElementById('controls-color').style.display = (m==='color')?'flex':'none';
+    }
+
+    // --- Light Rays ---
+    const angleSlider = document.getElementById('angleSlider');
+    const angleVal = document.getElementById('angleVal');
+    let incidenceAngle = parseInt(angleSlider.value);
+    angleSlider.oninput = () => { incidenceAngle = parseInt(angleSlider.value); angleVal.textContent = incidenceAngle+'°'; }
+
+    function drawLight() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const startX = 200, startY = 260;
+      const length = 300;
+      const rad = incidenceAngle * Math.PI/180;
+
+      // incident ray
+      ctx.strokeStyle = '#ff0000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      const endX = startX + length*Math.cos(rad);
+      const endY = startY - length*Math.sin(rad);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      // interface (glass)
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(500, 180);
+      ctx.lineTo(500, 340);
+      ctx.stroke();
+
+      // refracted ray using simple n1=1, n2=1.5
+      const n1 = 1, n2 = 1.5;
+      const theta1 = rad;
+      const theta2 = Math.asin(n1/n2 * Math.sin(theta1));
+      const refX = 500 + length*Math.cos(theta2);
+      const refY = 260 - length*Math.sin(theta2);
+      ctx.strokeStyle = '#0000ff';
+      ctx.beginPath();
+      ctx.moveTo(500, 260);
+      ctx.lineTo(refX, refY);
+      ctx.stroke();
+    }
+
+    // --- Lens ---
+    const lensType = document.getElementById('lensType');
+    const focalSlider = document.getElementById('focalSlider');
+    const focalVal = document.getElementById('focalVal');
+    let focalLength = parseInt(focalSlider.value);
+    focalSlider.oninput = () => { focalLength = parseInt(focalSlider.value); focalVal.textContent = focalLength; }
+
+    function drawLens() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const cx = 480, cy = 260;
+      // draw lens
+      ctx.strokeStyle = '#2563eb'; ctx.lineWidth=4;
+      if(lensType.value==='convex'){
+        ctx.beginPath(); ctx.ellipse(cx,cy,focalLength/3,100,0,0,2*Math.PI); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.ellipse(cx,cy,focalLength/3,100,0,0,2*Math.PI,true); ctx.stroke();
+      }
+
+      // incoming rays
+      for(let i=-2;i<=2;i++){
+        const y = cy + i*30;
+        ctx.strokeStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.moveTo(100, y);
+        ctx.lineTo(cx, y);
+        ctx.stroke();
+
+        // refracted/focused rays
+        ctx.strokeStyle = '#10b981';
+        ctx.beginPath();
+        ctx.moveTo(cx, y);
+        if(lensType.value==='convex'){
+          ctx.lineTo(cx + focalLength, cy);
+        } else {
+          ctx.lineTo(cx + focalLength, cy + (y-cy));
+        }
+        ctx.stroke();
+      }
+    }
+
+    // --- Color Mixing ---
+    const redSlider = document.getElementById('redSlider');
+    const greenSlider = document.getElementById('greenSlider');
+    const blueSlider = document.getElementById('blueSlider');
+    let red = parseInt(redSlider.value), green=parseInt(greenSlider.value), blue=parseInt(blueSlider.value);
+    redSlider.oninput = ()=>{red=parseInt(redSlider.value);}
+    greenSlider.oninput = ()=>{green=parseInt(greenSlider.value);}
+    blueSlider.oninput = ()=>{blue=parseInt(blueSlider.value);}
+
+    function drawColor() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // three beams
+      ctx.lineWidth=60;
+      const startY = 100;
+      ctx.strokeStyle = `rgb(${red},0,0)`;
+      ctx.beginPath(); ctx.moveTo(200,startY); ctx.lineTo(700,startY+50); ctx.stroke();
+
+      ctx.strokeStyle = `rgb(0,${green},0)`;
+      ctx.beginPath(); ctx.moveTo(200,startY+60); ctx.lineTo(700,startY+110); ctx.stroke();
+
+      ctx.strokeStyle = `rgb(0,0,${blue})`;
+      ctx.beginPath(); ctx.moveTo(200,startY+120); ctx.lineTo(700,startY+170); ctx.stroke();
+
+      // overlap rectangle
+      ctx.fillStyle = `rgb(${red},${green},${blue})`;
+      ctx.fillRect(720,130,120,80);
+
+      ctx.strokeStyle = '#000'; ctx.lineWidth=2;
+      ctx.strokeRect(720,130,120,80);
+      ctx.fillStyle='#000';
+      ctx.fillText('Resulting Color',725,225);
+    }
+
+    function loop() {
+      if(mode==='light') drawLight();
+      else if(mode==='lens') drawLens();
+      else if(mode==='color') drawColor();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
