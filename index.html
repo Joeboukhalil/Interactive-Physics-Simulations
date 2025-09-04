@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>⚛️ Quantum Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:#0d0d0d;
+      color:#fff;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px;
+    }
+    header {
+      text-align:center;
+      margin-bottom:20px;
+    }
+    header h1 { font-size:2.2em; margin:0; color:#00ffdd; }
+    header p { color:#aaa; margin:5px 0 0; }
+    .canvas-wrap {
+      border:1px solid #333;
+      border-radius:12px;
+      overflow:hidden;
+      background:#111;
+    }
+    canvas { display:block; }
+    .controls {
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:12px;
+      justify-content:center;
+    }
+    .control {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      background:#1a1a1a;
+      border-radius:10px;
+      padding:8px 12px;
+      border:1px solid #333;
+    }
+    .control label { font-size:14px; margin-bottom:4px; color:#ccc; }
+    input[type=range] { width:150px; }
+    .hint { font-size:13px; color:#777; text-align:center; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚛️ Quantum Lab</h1>
+    <p>Tunneling, superposition, and entanglement (symbolic models)</p>
+  </header>
+
+  <div class="canvas-wrap">
+    <canvas id="canvas" width="960" height="520"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <label>Particle Count: <span id="particleVal">80</span></label>
+      <input type="range" min="20" max="200" value="80" id="particleSlider">
+    </div>
+    <div class="control">
+      <label>Tunneling Probability: <span id="tunnelVal">0.5</span></label>
+      <input type="range" min="0" max="1" step="0.01" value="0.5" id="tunnelSlider">
+    </div>
+  </div>
+
+  <p class="hint">Tip: Observe particles in superposition, entanglement, and tunneling through barriers.</p>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const particleSlider = document.getElementById('particleSlider');
+    const tunnelSlider = document.getElementById('tunnelSlider');
+    const particleVal = document.getElementById('particleVal');
+    const tunnelVal = document.getElementById('tunnelVal');
+
+    let particleCount = parseInt(particleSlider.value);
+    let tunnelingProb = parseFloat(tunnelSlider.value);
+
+    particleSlider.oninput = () => { 
+      particleCount=parseInt(particleSlider.value); 
+      particleVal.textContent=particleCount; 
+    }
+    tunnelSlider.oninput = () => { 
+      tunnelingProb=parseFloat(tunnelSlider.value); 
+      tunnelVal.textContent=tunnelingProb; 
+    }
+
+    let particles = [];
+
+    function initParticles() {
+      particles = [];
+      for(let i=0;i<particleCount;i++){
+        particles.push({
+          x: Math.random()*canvas.width,
+          y: Math.random()*canvas.height,
+          vx: (Math.random()-0.5)*2,
+          vy: (Math.random()-0.5)*2,
+          radius: 4,
+          color: `hsl(${Math.random()*360}, 100%, 70%)`,
+          entangled: Math.random() < 0.5
+        });
+      }
+    }
+    initParticles();
+
+    function updateParticles() {
+      for(let p of particles){
+        // Superposition: particle moves in two directions at once (symbolic)
+        p.x += p.vx * (Math.random()<0.5?1:-1);
+        p.y += p.vy * (Math.random()<0.5?1:-1);
+
+        // Tunneling: sometimes skip through barriers (edges)
+        if(Math.random() < tunnelingProb){
+          p.x += (Math.random()-0.5)*50;
+          p.y += (Math.random()-0.5)*50;
+        }
+
+        // Entanglement: linked particle moves similarly to another random particle
+        if(p.entangled && particles.length>1){
+          const partner = particles[Math.floor(Math.random()*particles.length)];
+          p.x += (partner.x - p.x) * 0.01;
+          p.y += (partner.y - p.y) * 0.01;
+        }
+
+        // Wrap around edges
+        if(p.x<0) p.x+=canvas.width;
+        if(p.x>canvas.width) p.x-=canvas.width;
+        if(p.y<0) p.y+=canvas.height;
+        if(p.y>canvas.height) p.y-=canvas.height;
+      }
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let p of particles){
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.radius,0,2*Math.PI);
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      if(particles.length !== particleCount) initParticles();
+      updateParticles();
+      drawParticles();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
