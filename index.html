@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🌊 Fluid Dynamics Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:#e0f7fa;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px;
+    }
+    header {
+      text-align:center;
+      margin-bottom:20px;
+    }
+    header h1 { font-size:2.2em; margin:0; }
+    header p { color:#555; margin:5px 0 0; }
+    .canvas-wrap {
+      border:1px solid #ccc;
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    canvas { display:block; }
+    .controls {
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:12px;
+      justify-content:center;
+    }
+    .control {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      background:#fafafa;
+      border-radius:10px;
+      padding:8px 12px;
+      border:1px solid #ddd;
+    }
+    .control label { font-size:14px; margin-bottom:4px; color:#555; }
+    input[type=range] { width:150px; }
+    .hint { font-size:13px; color:#777; text-align:center; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌊 Fluid Dynamics Lab</h1>
+    <p>Buoyancy, pressure systems, and vortex formation.</p>
+  </header>
+
+  <div class="canvas-wrap">
+    <canvas id="canvas" width="960" height="520"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <label>Particle Count: <span id="particleVal">150</span></label>
+      <input type="range" min="50" max="300" value="150" id="particleSlider">
+    </div>
+    <div class="control">
+      <label>Vortex Strength: <span id="vortexVal">2</span></label>
+      <input type="range" min="0" max="5" step="0.1" value="2" id="vortexSlider">
+    </div>
+  </div>
+
+  <p class="hint">Tip: Watch particles float, swirl, and form mesmerizing vortex patterns.</p>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const particleSlider = document.getElementById('particleSlider');
+    const vortexSlider = document.getElementById('vortexSlider');
+    const particleVal = document.getElementById('particleVal');
+    const vortexVal = document.getElementById('vortexVal');
+
+    let particleCount = parseInt(particleSlider.value);
+    let vortexStrength = parseFloat(vortexSlider.value);
+
+    particleSlider.oninput = () => { 
+      particleCount=parseInt(particleSlider.value); 
+      particleVal.textContent=particleCount; 
+    }
+    vortexSlider.oninput = () => { 
+      vortexStrength=parseFloat(vortexSlider.value); 
+      vortexVal.textContent=vortexStrength; 
+    }
+
+    let particles = [];
+
+    function initParticles() {
+      particles = [];
+      for(let i=0;i<particleCount;i++){
+        particles.push({
+          x: Math.random()*canvas.width,
+          y: Math.random()*canvas.height,
+          radius: 3 + Math.random()*3,
+          color: `hsl(${Math.random()*360}, 70%, 50%)`,
+          angle: Math.random()*Math.PI*2,
+          radiusFromCenter: Math.random()*200 + 50
+        });
+      }
+    }
+    initParticles();
+
+    function updateParticles() {
+      const centerX = canvas.width/2;
+      const centerY = canvas.height/2;
+      for(let p of particles){
+        // Rotate around center to create vortex
+        p.angle += 0.02*vortexStrength; // speed of rotation
+        p.radiusFromCenter *= 0.995; // slowly move inward for dynamic feel
+
+        // Convert polar to cartesian
+        p.x = centerX + p.radiusFromCenter * Math.cos(p.angle);
+        p.y = centerY + p.radiusFromCenter * Math.sin(p.angle);
+
+        // Small random motion for fluid effect
+        p.x += (Math.random()-0.5) * 1.5;
+        p.y += (Math.random()-0.5) * 1.5;
+
+        // Keep inside canvas
+        if(p.x<0) p.x+=canvas.width;
+        if(p.x>canvas.width) p.x-=canvas.width;
+        if(p.y<0) p.y+=canvas.height;
+        if(p.y>canvas.height) p.y-=canvas.height;
+      }
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let p of particles){
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.radius,0,2*Math.PI);
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      if(particles.length !== particleCount) initParticles();
+      updateParticles();
+      drawParticles();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
