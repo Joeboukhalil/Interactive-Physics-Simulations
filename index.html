@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mechanics Simulations</title>
+  <style>
+    body { text-align: center; font-family: Arial; background: #f4f4f4; }
+    canvas { background: white; border: 1px solid black; margin-top: 10px; }
+    button { margin: 5px; padding: 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Mechanics Simulations</h1>
+  <div>
+    <button onclick="setMode('projectile')">Projectile Motion</button>
+    <button onclick="setMode('pendulum')">Pendulum</button>
+    <button onclick="setMode('inclined')">Inclined Plane</button>
+    <button onclick="setMode('collision')">Collision</button>
+  </div>
+  <canvas id="canvas" width="800" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let mode = "projectile";
+    let objects = [];
+    let time = 0;
+
+    function setMode(m) {
+      mode = m;
+      reset();
+    }
+
+    function reset() {
+      time = 0;
+      objects = [];
+      if (mode === "projectile") {
+        objects.push({x: 50, y: 350, vx: 5, vy: -8});
+      } else if (mode === "pendulum") {
+        objects.push({length: 150, angle: Math.PI/3, omega: 0});
+      } else if (mode === "inclined") {
+        objects.push({x: 100, y: 350, vx: 0, a: 0.05, onSlope: true});
+      } else if (mode === "collision") {
+        objects.push({x: 200, y: 200, r: 20, vx: 2, color: "red"});
+        objects.push({x: 600, y: 200, r: 20, vx: -2, color: "blue"});
+      }
+    }
+
+    // -------- Projectile Motion --------
+    function drawProjectile(obj) {
+      ctx.beginPath();
+      ctx.arc(obj.x, obj.y, 10, 0, Math.PI*2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+    }
+
+    function updateProjectile(obj) {
+      obj.x += obj.vx;
+      obj.vy += 0.2; // gravity
+      obj.y += obj.vy;
+    }
+
+    // -------- Pendulum --------
+    function drawPendulum(obj) {
+      const originX = 400, originY = 50;
+      const bobX = originX + obj.length * Math.sin(obj.angle);
+      const bobY = originY + obj.length * Math.cos(obj.angle);
+
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(bobX, bobY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(bobX, bobY, 15, 0, Math.PI*2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+    }
+
+    function updatePendulum(obj) {
+      const g = 0.01;
+      const alpha = -g * Math.sin(obj.angle);
+      obj.omega += alpha;
+      obj.angle += obj.omega;
+      obj.omega *= 0.99; // damping
+    }
+
+    // -------- Inclined Plane --------
+    function drawInclined(obj) {
+      // slope line
+      ctx.beginPath();
+      ctx.moveTo(100, 350);
+      ctx.lineTo(400, 200);
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // ground line
+      ctx.beginPath();
+      ctx.moveTo(400, 200);
+      ctx.lineTo(700, 200);
+      ctx.stroke();
+
+      // block
+      ctx.beginPath();
+      ctx.rect(obj.x - 15, obj.y - 15, 30, 30);
+      ctx.fillStyle = "red";
+      ctx.fill();
+    }
+
+    function updateInclined(obj) {
+      const x1 = 100, y1 = 350, x2 = 400, y2 = 200;
+      const slope = (y2 - y1) / (x2 - x1);
+
+      if (obj.onSlope) {
+        obj.vx += obj.a;  // accelerate along slope
+        obj.x += obj.vx;
+
+        if (obj.x < x2) {
+          obj.y = y1 + slope * (obj.x - x1);
+        } else {
+          obj.onSlope = false; // reached the bottom
+          obj.y = y2;
+        }
+      } else {
+        // move horizontally on ground
+        obj.x += obj.vx;
+      }
+    }
+
+    // -------- Collision --------
+    function drawCollision(obj) {
+      ctx.beginPath();
+      ctx.arc(obj.x, obj.y, obj.r, 0, Math.PI*2);
+      ctx.fillStyle = obj.color;
+      ctx.fill();
+    }
+
+    function updateCollision(o1, o2) {
+      o1.x += o1.vx;
+      o2.x += o2.vx;
+
+      if (Math.abs(o1.x - o2.x) < o1.r + o2.r) {
+        let temp = o1.vx;
+        o1.vx = o2.vx;
+        o2.vx = temp;
+      }
+    }
+
+    // -------- Main Loop --------
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (mode === "projectile") {
+        let obj = objects[0];
+        updateProjectile(obj);
+        drawProjectile(obj);
+      } else if (mode === "pendulum") {
+        let obj = objects[0];
+        updatePendulum(obj);
+        drawPendulum(obj);
+      } else if (mode === "inclined") {
+        let obj = objects[0];
+        updateInclined(obj);
+        drawInclined(obj);
+      } else if (mode === "collision") {
+        let o1 = objects[0], o2 = objects[1];
+        updateCollision(o1, o2);
+        drawCollision(o1);
+        drawCollision(o2);
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    reset();
+    loop();
+  </script>
+</body>
+</html>
