@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🔥 Thermodynamics Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:#f5f5f5;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px;
+    }
+    header {
+      text-align:center;
+      margin-bottom:20px;
+    }
+    header h1 { font-size:2.2em; margin:0; }
+    header p { color:#555; margin:5px 0 0; }
+    .canvas-wrap {
+      border:1px solid #ccc;
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    canvas { display:block; }
+    .controls {
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:12px;
+      justify-content:center;
+    }
+    .control {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      background:#fafafa;
+      border-radius:10px;
+      padding:8px 12px;
+      border:1px solid #ddd;
+    }
+    .control label { font-size:14px; margin-bottom:4px; color:#555; }
+    input[type=range] { width:150px; }
+    .hint { font-size:13px; color:#777; text-align:center; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔥 Thermodynamics Lab</h1>
+    <p>Heat transfer, phase changes, and entropy visualization</p>
+  </header>
+
+  <div class="canvas-wrap">
+    <canvas id="canvas" width="960" height="520"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <label>Heat Source Intensity: <span id="heatVal">50</span></label>
+      <input type="range" min="0" max="100" value="50" id="heatSlider">
+    </div>
+    <div class="control">
+      <label>Particle Count: <span id="particleVal">100</span></label>
+      <input type="range" min="50" max="300" value="100" id="particleSlider">
+    </div>
+  </div>
+
+  <p class="hint">Tip: Watch how heat spreads, particles move randomly, and phase changes occur.</p>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const heatSlider = document.getElementById('heatSlider');
+    const particleSlider = document.getElementById('particleSlider');
+    const heatVal = document.getElementById('heatVal');
+    const particleVal = document.getElementById('particleVal');
+
+    let heat = parseInt(heatSlider.value);
+    let particleCount = parseInt(particleSlider.value);
+
+    heatSlider.oninput = () => { heat = parseInt(heatSlider.value); heatVal.textContent = heat; }
+    particleSlider.oninput = () => { particleCount = parseInt(particleSlider.value); particleVal.textContent = particleCount; }
+
+    // Create particles
+    let particles = [];
+    function initParticles() {
+      particles = [];
+      for(let i=0;i<particleCount;i++){
+        particles.push({
+          x: Math.random()*canvas.width,
+          y: Math.random()*canvas.height,
+          vx: (Math.random()-0.5)*2,
+          vy: (Math.random()-0.5)*2,
+          phase: Math.random()<0.33 ? 'solid' : Math.random()<0.5 ? 'liquid' : 'gas'
+        });
+      }
+    }
+    initParticles();
+
+    function updateParticles() {
+      for(let p of particles){
+        // random motion increases with heat (entropy)
+        p.vx += (Math.random()-0.5)*0.2*(heat/50);
+        p.vy += (Math.random()-0.5)*0.2*(heat/50);
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Bounce walls
+        if(p.x<0 || p.x>canvas.width) p.vx*=-1;
+        if(p.y<0 || p.y>canvas.height) p.vy*=-1;
+
+        // Simple phase change color
+        if(heat<30) p.phase='solid';
+        else if(heat<70) p.phase='liquid';
+        else p.phase='gas';
+      }
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let p of particles){
+        if(p.phase==='solid') ctx.fillStyle='#1e3a8a';
+        else if(p.phase==='liquid') ctx.fillStyle='#2563eb';
+        else ctx.fillStyle='#10b981';
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,4,0,2*Math.PI);
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      // adjust particle number
+      if(particles.length !== particleCount) initParticles();
+      updateParticles();
+      drawParticles();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
