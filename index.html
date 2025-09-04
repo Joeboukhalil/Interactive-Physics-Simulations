@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Physics Simulations</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(to right, #74ebd5, #acb6e5);
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin-top: 50px;
+      font-size: 2.5em;
+      color: #222;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap; /* allow wrapping */
+      justify-content: center;
+      gap: 50px;
+      margin-top: 50px;
+      padding: 0 20px;
+    }
+    .card {
+      width: 250px;
+      height: 200px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease-in-out;
+      text-decoration: none;
+      color: #222;
+    }
+    .card:hover {
+      transform: scale(1.05);
+    }
+    .card h2 {
+      margin: 10px 0;
+    }
+    .card p {
+      font-size: 14px;
+      color: #555;
+      padding: 0 15px;
+    }
+
+    /* Responsive layout */
+    @media (min-width: 800px) {
+      .card {
+        flex: 0 0 calc(50% - 40px); /* 2 per row with gap */
+      }
+    }
+
+    @media (max-width: 799px) {
+      .card {
+        flex: 0 0 100%; /* 1 per row on small screens */
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Physics Simulations</h1>
+  <div class="container">
+    <a href="mechanics/index.html" class="card">
+      <h2>⚙️ Mechanics</h2>
+      <p>Projectile motion, pendulum swings, inclined planes, and collisions.</p>
+    </a>
+    <a href="waves/index.html" class="card">
+      <h2>🌊 Waves</h2>
+      <p>Oscillations, interference, string vibrations, and Doppler effect.</p>
+    </a>
+    <a href="electricity/index.html" class="card">
+      <h2>⚡ Electricity & Magnetism</h2>
+      <p>Circuit building, magnetic field lines, and induction loops.</p>
+    </a>
+    <a href="optics/index.html" class="card">
+      <h2>🔆 Optics</h2>
+      <p>Light reflection/refraction, lens behavior, color mixing.</p>
+    </a>
+    <a href="thermodynamics/index.html" class="card">
+    <h2>🔥 Thermodynamics</h2>
+    <p>Heat transfer, phase changes, and entropy visualization.</p>
+  </a>
+    <a href="fluiddynamics/index.html" class="card">
+    <h2>🌊 Fluid Dynamics</h2>
+    <p>Buoyancy, pressure systems, and vortex formation.</p>
+  </a>
+    <a href="quantum/index.html" class="card">
+  <h2>⚛️ Quantum Concepts</h2>
+  <p>Tunneling, superposition, and entanglement (symbolic models).</p>
+  </a>
+  </div>
+</body>
+</html>
