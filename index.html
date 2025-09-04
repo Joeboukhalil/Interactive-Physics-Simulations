@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wave Simulations</title>
+  <style>
+    body { text-align: center; font-family: Arial; background: #f4f4f4; }
+    canvas { background: white; border: 1px solid black; margin-top: 10px; }
+    button { margin: 5px; padding: 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Wave Simulations</h1>
+  <div>
+    <button onclick="setMode('oscillation')">Waves & Oscillations</button>
+    <button onclick="setMode('interference')">Sound Wave Interference</button>
+    <button onclick="setMode('string')">String Vibrations</button>
+    <button onclick="setMode('doppler')">Doppler Effect</button>
+  </div>
+  <canvas id="canvas" width="800" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let mode = "oscillation";
+    let t = 0;
+
+    function setMode(m) {
+      mode = m;
+      t = 0;
+    }
+
+    // --------- Oscillation (simple sine wave) ---------
+    function drawOscillation() {
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        let y = 200 + 50 * Math.sin((x/40) - t);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = "blue";
+      ctx.stroke();
+    }
+
+    // --------- Interference (two waves) ---------
+    function drawInterference() {
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        let y1 = 200 + 40 * Math.sin((x/40) - t);
+        let y2 = 200 + 40 * Math.sin((x/40) + t);
+        let y = (y1 + y2) / 2; // combined wave
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = "red";
+      ctx.stroke();
+    }
+
+    // --------- String vibrations (standing wave) ---------
+    function drawString() {
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        let k = (2 * Math.PI / canvas.width) * 4; // 4 half-wavelengths
+        let y = 200 + 60 * Math.sin(k * x) * Math.cos(t);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = "green";
+      ctx.stroke();
+    }
+
+    // --------- Doppler Effect (moving source) ---------
+    let sourceX = 200;
+    let sourceVX = 2;
+
+    function drawDoppler() {
+      sourceX += sourceVX;
+      if (sourceX > 600 || sourceX < 200) sourceVX *= -1;
+
+      // Draw source
+      ctx.beginPath();
+      ctx.arc(sourceX, 200, 10, 0, Math.PI*2);
+      ctx.fillStyle = "black";
+      ctx.fill();
+
+      // Emit circular waves
+      for (let i = 0; i < 6; i++) {
+        let r = (t*20 - i*40) % 400;
+        if (r > 0) {
+          ctx.beginPath();
+          ctx.arc(sourceX, 200, r, 0, Math.PI*2);
+          ctx.strokeStyle = "purple";
+          ctx.stroke();
+        }
+      }
+    }
+
+    // --------- Main Loop ---------
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (mode === "oscillation") {
+        drawOscillation();
+      } else if (mode === "interference") {
+        drawInterference();
+      } else if (mode === "string") {
+        drawString();
+      } else if (mode === "doppler") {
+        drawDoppler();
+      }
+
+      t += 0.05;
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
